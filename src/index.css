@@ -15,6 +15,7 @@
     @apply font-sans text-slate-800 antialiased;
     background:
       radial-gradient(circle at top left, rgba(187, 247, 208, 0.9), transparent 24%),
+      radial-gradient(circle at 80% 10%, rgba(59, 130, 246, 0.1), transparent 20%),
       radial-gradient(circle at top right, rgba(253, 224, 71, 0.18), transparent 18%),
       linear-gradient(180deg, #f7fbf6 0%, #eef6ef 38%, #f8faf8 100%);
     -webkit-font-smoothing: antialiased;
@@ -45,23 +46,23 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand-700 px-5 py-3 font-semibold text-white shadow-lg shadow-brand-900/15 hover:-translate-y-0.5 hover:bg-brand-800 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-700 px-5 py-3 font-semibold text-white shadow-lg shadow-brand-900/15 hover:-translate-y-0.5 hover:bg-brand-800 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-brand-300 bg-white/80 px-5 py-3 font-semibold text-brand-800 shadow-sm backdrop-blur hover:border-brand-500 hover:bg-brand-50 active:translate-y-0;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white/80 px-5 py-3 font-semibold text-brand-800 shadow-sm backdrop-blur hover:border-brand-500 hover:bg-brand-50 active:translate-y-0;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .card {
-    @apply rounded-lg border border-white/70 bg-white/80 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur;
+    @apply rounded-2xl border border-white/70 bg-white/80 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur;
   }
 
   .input-field {
-    @apply w-full rounded-lg border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-800 shadow-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100;
+    @apply w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-800 shadow-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100;
   }
 
   .badge {
@@ -85,7 +86,7 @@
   }
 
   .panel-blur {
-    @apply rounded-lg border border-white/70 bg-white/70 backdrop-blur-xl;
+    @apply rounded-2xl border border-white/70 bg-white/70 backdrop-blur-xl;
   }
 }
 
@@ -228,7 +229,7 @@
 }
 
 .animate-loader-progress {
-  animation: loaderProgress 1.25s ease-in-out infinite;
+  animation: loaderProgress 2s ease-in-out forwards;
 }
 
 @keyframes loaderDot {

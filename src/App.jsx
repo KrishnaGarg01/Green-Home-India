@@ -15,7 +15,15 @@ function AppLayout() {
   const location = useLocation();
   const [displayLocation, setDisplayLocation] = useState(location);
   const [transitionStage, setTransitionStage] = useState("page-enter");
-  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeLoading, setRouteLoading] = useState(true);
+
+  useEffect(() => {
+    const loaderTimer = window.setTimeout(() => {
+      setRouteLoading(false);
+    }, 2000);
+
+    return () => window.clearTimeout(loaderTimer);
+  }, []);
 
   useEffect(() => {
     if (location.pathname === displayLocation.pathname) {
@@ -23,7 +31,6 @@ function AppLayout() {
       return undefined;
     }
 
-    setRouteLoading(true);
     setTransitionStage("page-exit");
 
     const swapTimer = window.setTimeout(() => {
@@ -31,13 +38,8 @@ function AppLayout() {
       setTransitionStage("page-enter");
     }, 180);
 
-    const finishTimer = window.setTimeout(() => {
-      setRouteLoading(false);
-    }, 760);
-
     return () => {
       window.clearTimeout(swapTimer);
-      window.clearTimeout(finishTimer);
     };
   }, [location, displayLocation.pathname]);
 

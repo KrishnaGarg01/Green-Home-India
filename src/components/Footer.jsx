@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Leaf, Phone, MapPin, Mail, MessageCircle } from "lucide-react";
+import { Leaf, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 
 export default function Footer() {
   const categories = [
@@ -79,7 +79,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Green Home India. All rights reserved.</p>
+          <p>Copyright {new Date().getFullYear()} Green Home India. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-4">
             <span>Cash on delivery</span>
             <span>Fast dispatch</span>
