@@ -1,19 +1,19 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Eye, CheckCircle, Tag } from "lucide-react";
+import { ShoppingCart, Eye, CheckCircle } from "lucide-react";
 import { useCart } from "../context/CartContext.jsx";
 import toast from "react-hot-toast";
 
 function getStockNum(stock) {
   if (stock === undefined || stock === null) return 50;
-  const n = Number(stock);
-  return isNaN(n) ? 50 : n;
+  const num = Number(stock);
+  return Number.isNaN(num) ? 50 : num;
 }
 
 export default function ProductCard({ product }) {
   const { addItem, isInCart } = useCart();
   const stock = getStockNum(product.stock);
-  const isOutOfStock = stock <= 0 ||
-    String(product.status).toLowerCase() === "out of stock";
+  const isOutOfStock =
+    stock <= 0 || String(product.status).toLowerCase() === "out of stock";
   const inCart = isInCart(product.id);
 
   const discount =
@@ -21,10 +21,12 @@ export default function ProductCard({ product }) {
       ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
       : 0;
 
-  function handleAddToCart(e) {
-    e.preventDefault();
-    e.stopPropagation();
+  function handleAddToCart(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
     if (isOutOfStock) return;
+
     addItem({ ...product, stock });
     toast.success(`${product.name} added to cart!`);
   }
@@ -32,88 +34,83 @@ export default function ProductCard({ product }) {
   return (
     <Link
       to={`/product/${product.id}`}
-      className="card group flex flex-col hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+      className="group flex h-full flex-col overflow-hidden rounded-lg border border-white/70 bg-white/85 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-28px_rgba(21,128,61,0.45)]"
     >
-      {/* Image */}
-      <div className="relative overflow-hidden bg-gray-50 aspect-square">
+      <div className="relative aspect-square overflow-hidden bg-[linear-gradient(180deg,#f5fbf3_0%,#edf6ec_100%)]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(187,247,208,0.55),transparent_44%)]" />
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+          className="relative z-10 h-full w-full object-contain p-4 transition duration-500 group-hover:scale-105"
           loading="lazy"
-          onError={(e) => {
-            e.target.src =
+          onError={(event) => {
+            event.target.src =
               "https://placehold.co/300x300/f3f4f6/94a3b8?text=No+Image";
           }}
         />
 
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {isOutOfStock && (
-            <span className="badge-red text-xs px-2 py-0.5">Out of Stock</span>
-          )}
+        <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
+          {isOutOfStock && <span className="badge-red">Out of Stock</span>}
           {!isOutOfStock && discount > 0 && (
-            <span className="badge bg-brand-600 text-white text-xs px-2 py-0.5">
-              {discount}% OFF
-            </span>
+            <span className="badge bg-lime-300 text-slate-900">{discount}% OFF</span>
           )}
         </div>
 
-        {/* Quick view overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <span className="bg-white text-gray-800 text-xs font-medium px-3 py-1.5 rounded-full shadow-md flex items-center gap-1">
-            <Eye className="w-3.5 h-3.5" />
-            View Details
+        <div className="absolute inset-x-3 bottom-3 z-20 flex translate-y-2 items-center justify-center opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          <span className="inline-flex items-center gap-2 rounded-full bg-slate-950/85 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
+            <Eye className="h-3.5 w-3.5" />
+            Open details
           </span>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-3 flex flex-col flex-1">
-        {/* Category */}
-        <span className="text-xs text-brand-600 font-medium uppercase tracking-wide mb-1">
-          {product.category}
-        </span>
+      <div className="flex flex-1 flex-col p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-700">
+            {product.category}
+          </span>
+          <span className="text-[11px] text-slate-400">
+            {product.brand || "Green Home"}
+          </span>
+        </div>
 
-        {/* Name */}
-        <h3 className="text-sm font-semibold text-gray-800 leading-snug mb-auto line-clamp-2 group-hover:text-brand-700 transition-colors">
+        <h3 className="min-h-[44px] text-sm font-semibold leading-6 text-slate-900 transition group-hover:text-brand-800">
           {product.name}
         </h3>
 
-        {/* Price */}
-        <div className="flex items-center gap-2 mt-2 mb-3">
-          <span className="text-lg font-bold text-gray-900">
-            ₹{product.price?.toLocaleString("en-IN")}
+        <div className="mt-4 flex items-end gap-2">
+          <span className="text-xl font-semibold text-slate-950">
+            ₹{Number(product.price || 0).toLocaleString("en-IN")}
           </span>
           {product.mrp && product.mrp > product.price && (
-            <span className="text-xs text-gray-400 line-through">
-              ₹{product.mrp?.toLocaleString("en-IN")}
+            <span className="pb-0.5 text-xs text-slate-400 line-through">
+              ₹{Number(product.mrp).toLocaleString("en-IN")}
             </span>
           )}
         </div>
 
-        {/* Add to cart */}
         <button
+          type="button"
           onClick={handleAddToCart}
           disabled={isOutOfStock}
-          className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95 ${
+          className={`mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold ${
             isOutOfStock
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              ? "cursor-not-allowed bg-slate-100 text-slate-400"
               : inCart
-              ? "bg-brand-50 text-brand-700 border-2 border-brand-200 hover:bg-brand-100"
-              : "bg-brand-700 hover:bg-brand-800 text-white"
+                ? "border border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100"
+                : "bg-slate-950 text-white hover:bg-brand-800"
           }`}
         >
           {isOutOfStock ? (
             "Out of Stock"
           ) : inCart ? (
             <>
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="h-4 w-4" />
               In Cart
             </>
           ) : (
             <>
-              <ShoppingCart className="w-4 h-4" />
+              <ShoppingCart className="h-4 w-4" />
               Add to Cart
             </>
           )}

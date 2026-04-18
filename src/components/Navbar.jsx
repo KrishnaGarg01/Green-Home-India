@@ -1,6 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, Leaf, Menu, X, Search } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { ShoppingCart, Leaf, Menu, X, Sparkles } from "lucide-react";
 import { useCart } from "../context/CartContext.jsx";
 
 export default function Navbar() {
@@ -10,72 +10,73 @@ export default function Navbar() {
   const [cartAnimating, setCartAnimating] = useState(false);
   const location = useLocation();
 
-  // Animate cart badge when items change
   useEffect(() => {
     if (itemCount !== prevCount) {
       setCartAnimating(true);
       setPrevCount(itemCount);
-      const t = setTimeout(() => setCartAnimating(false), 300);
-      return () => clearTimeout(t);
+      const timer = window.setTimeout(() => setCartAnimating(false), 320);
+      return () => window.clearTimeout(timer);
     }
+    return undefined;
   }, [itemCount, prevCount]);
 
-  // Close menu on route change
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
 
   const navLinks = [
-    { to: "/", label: "Home" },
+    { to: "/", label: "Catalog" },
     { to: "/cart", label: "Cart" },
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <header className="sticky top-0 z-50 border-b border-white/60 bg-[rgba(248,250,248,0.76)] backdrop-blur-xl">
       <div className="container-custom">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 bg-brand-700 rounded-xl flex items-center justify-center shadow group-hover:bg-brand-800 transition-colors">
-              <Leaf className="w-5 h-5 text-white" />
+        <div className="flex min-h-[72px] items-center justify-between gap-4">
+          <Link to="/" className="flex min-w-0 items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 via-brand-700 to-brand-900 text-white shadow-lg shadow-brand-900/20">
+              <Leaf className="h-5 w-5" />
             </div>
-            <div className="hidden sm:block">
-              <span className="font-bold text-lg text-brand-800 leading-none block">
-                Green Home
+            <div className="min-w-0">
+              <span className="block truncate text-base font-semibold text-slate-950 sm:text-lg">
+                Green Home India
               </span>
-              <span className="text-xs text-gray-500 leading-none">India</span>
+              <span className="flex items-center gap-1 text-xs text-slate-500">
+                <Sparkles className="h-3 w-3 text-lime-600" />
+                Smart gear for modern installs
+              </span>
             </div>
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  location.pathname === link.to
-                    ? "bg-brand-50 text-brand-700"
-                    : "text-gray-600 hover:text-brand-700 hover:bg-gray-50"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="hidden items-center gap-2 md:flex">
+            {navLinks.map((link) => {
+              const active = location.pathname === link.to;
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`rounded-lg px-4 py-2 text-sm font-medium ${
+                    active
+                      ? "bg-brand-900 text-white shadow-lg shadow-brand-900/15"
+                      : "text-slate-600 hover:bg-white hover:text-brand-800"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Actions */}
           <div className="flex items-center gap-2">
-            {/* Cart button */}
             <Link
               to="/cart"
-              className="relative flex items-center gap-2 bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+              className="relative inline-flex items-center gap-2 rounded-lg border border-brand-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm hover:border-brand-400 hover:text-brand-800"
             >
-              <ShoppingCart className="w-4 h-4" />
+              <ShoppingCart className="h-4 w-4" />
               <span className="hidden sm:inline">Cart</span>
               {itemCount > 0 && (
                 <span
-                  className={`absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none ${
+                  className={`absolute -right-2 -top-2 min-w-[22px] rounded-full bg-lime-400 px-1.5 py-1 text-center text-[11px] font-bold leading-none text-slate-950 shadow-md ${
                     cartAnimating ? "cart-bounce" : ""
                   }`}
                 >
@@ -84,33 +85,35 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Mobile menu button */}
             <button
-              className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
-              onClick={() => setMenuOpen(!menuOpen)}
+              type="button"
+              onClick={() => setMenuOpen((value) => !value)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-white/80 bg-white/75 text-slate-700 shadow-sm md:hidden"
               aria-label="Toggle menu"
             >
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden border-t border-gray-100 py-3 space-y-1 animate-fade-in">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  location.pathname === link.to
-                    ? "bg-brand-50 text-brand-700"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <div className="panel-blur mb-4 space-y-1 border border-white/80 p-2 md:hidden">
+            {navLinks.map((link) => {
+              const active = location.pathname === link.to;
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`block rounded-lg px-4 py-3 text-sm font-medium ${
+                    active
+                      ? "bg-brand-900 text-white"
+                      : "text-slate-700 hover:bg-brand-50 hover:text-brand-800"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

@@ -1,7 +1,18 @@
-import { useState, useMemo } from "react";
-import { Search, X, ShoppingBag, Zap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import {
+  Search,
+  X,
+  ShoppingBag,
+  Sparkles,
+  ShieldCheck,
+  Truck,
+  PhoneCall,
+  ArrowRight,
+} from "lucide-react";
 import { useProducts } from "../hooks/useProducts";
 import ProductCard from "../components/ProductCard";
+import RevealOnScroll from "../components/RevealOnScroll.jsx";
 
 const CATEGORIES = [
   "All",
@@ -23,12 +34,12 @@ function SkeletonCard() {
   return (
     <div className="card overflow-hidden">
       <div className="skeleton aspect-square" />
-      <div className="p-3 space-y-2">
-        <div className="skeleton h-3 w-1/2 rounded" />
-        <div className="skeleton h-4 rounded" />
-        <div className="skeleton h-4 w-3/4 rounded" />
-        <div className="skeleton h-3 w-1/3 rounded" />
-        <div className="skeleton h-9 rounded-xl mt-1" />
+      <div className="space-y-3 p-4">
+        <div className="skeleton h-3 w-24 rounded-full" />
+        <div className="skeleton h-5 rounded" />
+        <div className="skeleton h-5 w-4/5 rounded" />
+        <div className="skeleton h-6 w-1/2 rounded" />
+        <div className="skeleton h-11 rounded-lg" />
       </div>
     </div>
   );
@@ -36,101 +47,245 @@ function SkeletonCard() {
 
 export default function Home() {
   const { products, loading, error } = useProducts();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const initialCategory = searchParams.get("category");
+  const [activeCategory, setActiveCategory] = useState(
+    initialCategory && CATEGORIES.includes(initialCategory) ? initialCategory : "All"
+  );
+
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category");
+    if (categoryFromUrl && CATEGORIES.includes(categoryFromUrl)) {
+      setActiveCategory(categoryFromUrl);
+    } else {
+      setActiveCategory("All");
+    }
+  }, [location.search, searchParams]);
 
   const filtered = useMemo(() => {
-    return products.filter((p) => {
-      const matchCat =
-        activeCategory === "All" || p.category === activeCategory;
-      const q = search.toLowerCase();
+    return products.filter((product) => {
+      const matchCategory =
+        activeCategory === "All" || product.category === activeCategory;
+      const query = search.trim().toLowerCase();
       const matchSearch =
-        !search ||
-        p.name.toLowerCase().includes(q) ||
-        (p.description && p.description.toLowerCase().includes(q)) ||
-        p.category.toLowerCase().includes(q) ||
-        (p.brand && p.brand.toLowerCase().includes(q));
-      return matchCat && matchSearch;
+        !query ||
+        product.name.toLowerCase().includes(query) ||
+        (product.description || "").toLowerCase().includes(query) ||
+        (product.brand || "").toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query);
+
+      return matchCategory && matchSearch;
     });
   }, [products, search, activeCategory]);
 
   const categoryCount = useMemo(() => {
     const counts = {};
-    products.forEach((p) => {
-      counts[p.category] = (counts[p.category] || 0) + 1;
+    products.forEach((product) => {
+      counts[product.category] = (counts[product.category] || 0) + 1;
     });
     return counts;
   }, [products]);
 
+  const featuredProducts = filtered.slice(0, 3);
+
+  function handleCategoryChange(category) {
+    setActiveCategory(category);
+    if (category === "All") {
+      setSearchParams({});
+    } else {
+      setSearchParams({ category });
+    }
+  }
+
+  function clearFilters() {
+    setSearch("");
+    setActiveCategory("All");
+    setSearchParams({});
+  }
+
+  const stats = [
+    { label: "Active catalog", value: `${products.length}+` },
+    { label: "Fast dispatch", value: "Pan India" },
+    { label: "Order support", value: "COD ready" },
+  ];
+
+  const trustPoints = [
+    {
+      icon: <ShieldCheck className="h-5 w-5" />,
+      title: "Verified stock",
+      desc: "Reliable hardware with genuine product focus.",
+    },
+    {
+      icon: <Truck className="h-5 w-5" />,
+      title: "Smooth delivery",
+      desc: "Clear order flow from cart to doorstep.",
+    },
+    {
+      icon: <PhoneCall className="h-5 w-5" />,
+      title: "Quick follow-up",
+      desc: "Simple support for order confirmation and updates.",
+    },
+  ];
+
   return (
-    <div>
-      {/* ── Hero Banner ── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 text-white">
-        {/* Decorative circles */}
-        <div className="absolute -top-20 -right-20 w-80 h-80 bg-brand-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-brand-500/10 rounded-full blur-2xl pointer-events-none" />
+    <div className="pb-8">
+      <section className="relative overflow-hidden border-b border-white/50 bg-slate-950 text-white">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80"
+            alt="Electronics workspace"
+            className="h-full w-full object-cover opacity-30"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(3,14,9,0.94)_15%,rgba(8,44,25,0.82)_50%,rgba(20,83,45,0.55)_100%)]" />
+        </div>
 
-        <div className="container-custom relative py-14 md:py-18">
-          <div className="max-w-2xl mx-auto text-center">
-            {/* Badge */}
-            <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/20 text-white text-xs font-medium px-3 py-1.5 rounded-full mb-5">
-              <Zap className="w-3 h-3 text-yellow-300" />
-              62+ Products · COD Available · Pan India Delivery
+        <div className="container-custom relative grid min-h-[calc(100vh-72px)] items-end py-12 sm:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10">
+          <RevealOnScroll className="max-w-2xl pb-8 lg:pb-16">
+            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-brand-100">
+              <Sparkles className="h-3.5 w-3.5 text-lime-300" />
+              Green Home India storefront
             </span>
-
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-3 text-balance">
-              Green Home India
+            <h1 className="max-w-xl text-balance text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
+              Greener design, faster browsing, same order flow underneath.
             </h1>
-            <p className="text-brand-200 text-base sm:text-lg mb-8">
-              CCTV Accessories · Networking · Cables · Electronics
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate-200 sm:text-lg">
+              Explore CCTV accessories, networking gear, power supplies, and
+              electronics in a cleaner catalog built for quick scanning on any
+              screen.
             </p>
 
-            {/* Search bar */}
-            <div className="relative max-w-xl mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products, categories, brands…"
-                className="w-full pl-12 pr-12 py-4 rounded-2xl text-gray-800 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-white/50 shadow-xl placeholder-gray-400"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label="Clear search"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+              <a href="#catalog" className="btn-primary">
+                Browse catalog
+                <ArrowRight className="h-4 w-4" />
+              </a>
+              <Link to="/cart" className="btn-secondary border-white/20 bg-white/10 text-white hover:bg-white/16 hover:text-white">
+                Open cart
+              </Link>
             </div>
-          </div>
+
+            <div className="mt-10 grid max-w-xl grid-cols-3 gap-3">
+              {stats.map((stat, index) => (
+                <RevealOnScroll
+                  key={stat.label}
+                  delay={index * 110}
+                  className="rounded-lg border border-white/10 bg-white/[0.08] p-4 backdrop-blur-sm"
+                >
+                  <p className="text-2xl font-semibold text-white">{stat.value}</p>
+                  <p className="mt-1 text-sm text-slate-300">{stat.label}</p>
+                </RevealOnScroll>
+              ))}
+            </div>
+          </RevealOnScroll>
+
+          <RevealOnScroll
+            delay={140}
+            className="grid gap-3 self-end lg:justify-self-end lg:pb-10"
+          >
+            {featuredProducts.map((product) => (
+              <div
+                key={product.id}
+                className="grid grid-cols-[76px_1fr_auto] items-center gap-4 rounded-lg border border-white/10 bg-white/[0.08] p-3 backdrop-blur-sm"
+              >
+                <div className="flex h-[76px] w-[76px] items-center justify-center rounded-lg bg-white/85 p-2">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-white">
+                    {product.name}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-300">{product.category}</p>
+                </div>
+                <span className="text-sm font-semibold text-lime-300">
+                  ₹{Number(product.price || 0).toLocaleString("en-IN")}
+                </span>
+              </div>
+            ))}
+          </RevealOnScroll>
         </div>
       </section>
 
-      {/* ── Category Filter Bar ── */}
-      <div className="bg-white border-b border-gray-200 sticky top-16 z-40 shadow-sm">
-        <div className="container-custom py-2.5 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-2 min-w-max">
-            {CATEGORIES.map((cat) => {
-              const count = cat === "All" ? products.length : categoryCount[cat] || 0;
+      <section className="container-custom -mt-8 relative z-10">
+        <RevealOnScroll className="panel-blur grid gap-4 border border-white/80 p-4 shadow-[0_24px_60px_-30px_rgba(21,128,61,0.45)] sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search products, categories, brands..."
+              className="input-field pl-12 pr-12"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3 text-sm text-slate-600">
+            <ShoppingBag className="h-4 w-4 text-brand-700" />
+            <span>{filtered.length} products ready to explore</span>
+          </div>
+        </RevealOnScroll>
+      </section>
+
+      <section className="container-custom mt-10">
+        <RevealOnScroll className="grid gap-4 lg:grid-cols-3">
+          {trustPoints.map((point, index) => (
+            <RevealOnScroll
+              key={point.title}
+              delay={index * 120}
+              className="card p-5"
+            >
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-brand-100 text-brand-800">
+                {point.icon}
+              </div>
+              <h2 className="text-lg font-semibold text-slate-950">{point.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{point.desc}</p>
+            </RevealOnScroll>
+          ))}
+        </RevealOnScroll>
+      </section>
+
+      <div
+        id="catalog"
+        className="sticky top-[72px] z-40 mt-12 border-y border-white/60 bg-[rgba(248,250,248,0.82)] backdrop-blur-xl"
+      >
+        <div className="container-custom overflow-x-auto py-3 scrollbar-hide">
+          <div className="flex min-w-max gap-2">
+            {CATEGORIES.map((category) => {
+              const count =
+                category === "All" ? products.length : categoryCount[category] || 0;
+              const active = activeCategory === category;
+
               return (
                 <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                    activeCategory === cat
-                      ? "bg-brand-700 text-white shadow-sm"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  key={category}
+                  type="button"
+                  onClick={() => handleCategoryChange(category)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium ${
+                    active
+                      ? "border-brand-900 bg-brand-900 text-white"
+                      : "border-white/70 bg-white/80 text-slate-700 hover:border-brand-200 hover:text-brand-800"
                   }`}
                 >
-                  {cat}
+                  <span>{category}</span>
                   <span
-                    className={`text-xs rounded-full px-1.5 py-0.5 font-semibold ${
-                      activeCategory === cat
-                        ? "bg-white/20 text-white"
-                        : "bg-gray-200 text-gray-500"
+                    className={`rounded-full px-2 py-0.5 text-[11px] ${
+                      active
+                        ? "bg-white/15 text-white"
+                        : "bg-brand-100 text-brand-800"
                     }`}
                   >
                     {count}
@@ -142,108 +297,73 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Products Section ── */}
-      <section className="container-custom py-6 sm:py-8">
-        {/* Result header */}
+      <section className="container-custom py-8 sm:py-10">
         {!loading && !error && (
-          <div className="flex items-center justify-between mb-4 sm:mb-5">
+          <RevealOnScroll className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              {search ? (
-                <p className="text-sm text-gray-500">
-                  <span className="font-semibold text-gray-800">{filtered.length}</span>{" "}
-                  result{filtered.length !== 1 && "s"} for "
-                  <span className="text-brand-700">{search}</span>"
-                </p>
-              ) : (
-                <p className="text-sm text-gray-500">
-                  Showing{" "}
-                  <span className="font-semibold text-gray-800">{filtered.length}</span>{" "}
-                  product{filtered.length !== 1 && "s"}
-                  {activeCategory !== "All" && (
-                    <> in <span className="text-brand-700">{activeCategory}</span></>
-                  )}
-                </p>
-              )}
+              <p className="text-sm font-medium uppercase tracking-[0.12em] text-brand-700">
+                Catalog
+              </p>
+              <h2 className="section-title mt-1">
+                {search ? "Search results" : activeCategory === "All" ? "All products" : activeCategory}
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Showing {filtered.length} product{filtered.length !== 1 && "s"}
+                {search ? ` for "${search}"` : ""}
+              </p>
             </div>
 
             {(search || activeCategory !== "All") && (
-              <button
-                onClick={() => { setSearch(""); setActiveCategory("All"); }}
-                className="text-xs text-gray-500 hover:text-brand-700 flex items-center gap-1 transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
+              <button type="button" onClick={clearFilters} className="btn-secondary">
+                <X className="h-4 w-4" />
                 Clear filters
               </button>
             )}
-          </div>
+          </RevealOnScroll>
         )}
 
-        {/* Loading skeletons */}
         {loading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <SkeletonCard key={i} />
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <SkeletonCard key={index} />
             ))}
           </div>
         )}
 
-        {/* Error state */}
         {error && (
-          <div className="py-20 text-center">
-            <p className="text-4xl mb-3">⚠️</p>
-            <p className="text-lg font-semibold text-gray-700 mb-1">Failed to load products</p>
-            <p className="text-sm text-gray-400">{error}</p>
+          <div className="card py-16 text-center">
+            <p className="text-lg font-semibold text-slate-800">
+              Failed to load products
+            </p>
+            <p className="mt-2 text-sm text-slate-500">{error}</p>
           </div>
         )}
 
-        {/* Empty state */}
         {!loading && !error && filtered.length === 0 && (
-          <div className="py-20 text-center">
-            <ShoppingBag className="w-14 h-14 mx-auto text-gray-200 mb-4" />
-            <p className="text-lg font-semibold text-gray-600 mb-1">No products found</p>
-            <p className="text-sm text-gray-400 mb-4">
-              Try a different keyword or category
+          <div className="card py-16 text-center">
+            <ShoppingBag className="mx-auto h-12 w-12 text-slate-300" />
+            <p className="mt-4 text-lg font-semibold text-slate-800">
+              No products match this search
             </p>
-            <button
-              onClick={() => { setSearch(""); setActiveCategory("All"); }}
-              className="btn-primary"
-            >
-              Clear Filters
+            <p className="mt-2 text-sm text-slate-500">
+              Try a broader keyword or reset the current category filter.
+            </p>
+            <button type="button" onClick={clearFilters} className="btn-primary mt-6">
+              Reset filters
             </button>
           </div>
         )}
 
-        {/* Products grid */}
         {!loading && !error && filtered.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 animate-fade-in">
-            {filtered.map((product) => (
-              <ProductCard key={product.id} product={product} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.map((product, index) => (
+              <RevealOnScroll key={product.id} delay={(index % 8) * 60}>
+                <ProductCard product={product} />
+              </RevealOnScroll>
             ))}
           </div>
         )}
       </section>
-
-      {/* ── Features strip ── */}
-      {!loading && !error && (
-        <section className="bg-brand-50 border-t border-brand-100 mt-8">
-          <div className="container-custom py-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              {[
-                { icon: "🚚", title: "Pan India Delivery", desc: "Delivered to your doorstep" },
-                { icon: "💵", title: "Cash on Delivery", desc: "Pay when you receive" },
-                { icon: "✅", title: "Genuine Products", desc: "Quality guaranteed" },
-                { icon: "📞", title: "Quick Support", desc: "Call or WhatsApp us" },
-              ].map((f) => (
-                <div key={f.title} className="p-4">
-                  <div className="text-3xl mb-2">{f.icon}</div>
-                  <p className="font-semibold text-sm text-gray-800">{f.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{f.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
     </div>
   );
 }

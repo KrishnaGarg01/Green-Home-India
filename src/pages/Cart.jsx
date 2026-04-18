@@ -9,82 +9,95 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import RevealOnScroll from "../components/RevealOnScroll.jsx";
 
 function CartItem({ item }) {
   const { removeItem, updateQty } = useCart();
+  const lineTotal = item.price * item.qty;
 
   function handleRemove() {
     removeItem(item.id);
     toast.success(`${item.name} removed`);
   }
 
-  const lineTotal = item.price * item.qty;
-
   return (
-    <div className="card flex gap-3 sm:gap-4 p-3 sm:p-4 animate-fade-in">
-      {/* Image */}
-      <Link
-        to={`/product/${item.id}`}
-        className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100"
-      >
-        <img
-          src={item.image}
-          alt={item.name}
-          className="w-full h-full object-contain p-1.5"
-          onError={(e) => {
-            e.target.src =
-              "https://placehold.co/96x96/f3f4f6/94a3b8?text=Img";
-          }}
-        />
-      </Link>
-
-      {/* Details */}
-      <div className="flex-1 min-w-0">
+    <div className="card p-4 sm:p-5">
+      <div className="flex flex-col gap-4 sm:flex-row">
         <Link
           to={`/product/${item.id}`}
-          className="font-semibold text-gray-800 hover:text-brand-700 text-sm sm:text-base line-clamp-2 leading-snug transition-colors"
+          className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-lg border border-white/60 bg-[linear-gradient(180deg,#f5fbf3_0%,#edf6ec_100%)] p-2"
         >
-          {item.name}
+          <img
+            src={item.image}
+            alt={item.name}
+            className="h-full w-full object-contain"
+            onError={(event) => {
+              event.target.src =
+                "https://placehold.co/96x96/f3f4f6/94a3b8?text=Img";
+            }}
+          />
         </Link>
-        <p className="text-xs text-brand-600 mt-0.5 font-medium">{item.category}</p>
-        <p className="text-xs text-gray-400 mt-0.5">Unit: ₹{Number(item.price).toLocaleString("en-IN")}</p>
 
-        {/* Qty + remove row */}
-        <div className="flex items-center justify-between mt-3">
-          {/* Qty stepper */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-xl px-1 py-0.5">
+        <div className="flex-1">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <Link
+                to={`/product/${item.id}`}
+                className="text-base font-semibold leading-7 text-slate-900 hover:text-brand-800"
+              >
+                {item.name}
+              </Link>
+              <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-brand-700">
+                {item.category}
+              </p>
+              <p className="mt-3 text-sm text-slate-500">
+                Unit price ₹{Number(item.price).toLocaleString("en-IN")}
+              </p>
+            </div>
+
             <button
-              onClick={() => updateQty(item.id, item.qty - 1)}
-              className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white hover:shadow-sm transition-all text-gray-600 active:scale-90"
-              aria-label="Decrease"
+              type="button"
+              onClick={handleRemove}
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-red-500"
             >
-              <Minus className="w-3 h-3" />
-            </button>
-            <span className="w-7 text-center font-bold text-sm">{item.qty}</span>
-            <button
-              onClick={() => {
-                if (item.qty < item.stock) updateQty(item.id, item.qty + 1);
-                else toast.error("Max stock reached");
-              }}
-              className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white hover:shadow-sm transition-all text-gray-600 active:scale-90"
-              aria-label="Increase"
-            >
-              <Plus className="w-3 h-3" />
+              <Trash2 className="h-4 w-4" />
+              Remove
             </button>
           </div>
 
-          {/* Line total + remove */}
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-gray-900 text-sm sm:text-base">
+          <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="inline-flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+              <button
+                type="button"
+                onClick={() => updateQty(item.id, item.qty - 1)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-brand-800 shadow-sm hover:bg-brand-50"
+                aria-label="Decrease quantity"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="w-8 text-center text-lg font-semibold text-slate-950">
+                {item.qty}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (item.qty < item.stock) {
+                    updateQty(item.id, item.qty + 1);
+                    return;
+                  }
+
+                  toast.error("Max stock reached");
+                }}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-brand-800 shadow-sm hover:bg-brand-50"
+                aria-label="Increase quantity"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="text-xl font-semibold text-slate-950">
               ₹{lineTotal.toLocaleString("en-IN")}
-            </span>
-            <button
-              onClick={handleRemove}
-              className="text-gray-300 hover:text-red-500 transition-colors"
-              aria-label="Remove item"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            </p>
           </div>
         </div>
       </div>
@@ -98,17 +111,20 @@ export default function Cart() {
   if (cart.length === 0) {
     return (
       <div className="container-custom py-20 text-center">
-        <div className="max-w-sm mx-auto">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
-            <ShoppingCart className="w-9 h-9 text-gray-300" />
+        <div className="mx-auto max-w-md">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brand-100">
+            <ShoppingCart className="h-9 w-9 text-brand-700" />
           </div>
-          <h2 className="text-xl font-bold text-gray-700 mb-2">Your cart is empty</h2>
-          <p className="text-gray-400 text-sm mb-6">
-            Looks like you haven't added anything yet.
+          <h1 className="mt-6 text-3xl font-semibold text-slate-950">
+            Your cart is waiting.
+          </h1>
+          <p className="mt-4 text-sm leading-7 text-slate-600">
+            Add products from the catalog and come back here when you are ready to
+            place an order.
           </p>
-          <Link to="/" className="btn-primary">
-            <ShoppingBag className="w-4 h-4" />
-            Browse Products
+          <Link to="/" className="btn-primary mt-8">
+            <ShoppingBag className="h-4 w-4" />
+            Browse products
           </Link>
         </div>
       </div>
@@ -116,96 +132,100 @@ export default function Cart() {
   }
 
   return (
-    <div className="container-custom py-6 sm:py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Cart{" "}
-          <span className="text-lg font-normal text-gray-400">
-            ({itemCount} item{itemCount !== 1 && "s"})
-          </span>
-        </h1>
+    <div className="container-custom py-8 sm:py-10">
+      <RevealOnScroll className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
+            Your order
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold text-slate-950 sm:text-4xl">
+            Cart summary
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            {itemCount} item{itemCount !== 1 && "s"} selected for checkout.
+          </p>
+        </div>
+
         <button
+          type="button"
           onClick={() => {
             if (confirm("Clear your entire cart?")) {
               clearCart();
               toast.success("Cart cleared");
             }
           }}
-          className="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1"
+          className="btn-secondary"
         >
-          <Trash2 className="w-3.5 h-3.5" />
-          Clear all
+          <Trash2 className="h-4 w-4" />
+          Clear cart
         </button>
-      </div>
+      </RevealOnScroll>
 
-      <div className="grid lg:grid-cols-3 gap-5 lg:gap-6">
-        {/* ── Cart Items ── */}
-        <div className="lg:col-span-2 space-y-3">
-          {cart.map((item) => (
-            <CartItem key={item.id} item={item} />
+      <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="space-y-4">
+          {cart.map((item, index) => (
+            <RevealOnScroll key={item.id} delay={index * 70}>
+              <CartItem item={item} />
+            </RevealOnScroll>
           ))}
 
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-sm text-brand-700 hover:text-brand-900 font-medium transition-colors mt-2"
+            className="inline-flex items-center gap-2 text-sm font-medium text-brand-800 hover:text-brand-900"
           >
-            ← Continue Shopping
+            Continue shopping
           </Link>
         </div>
 
-        {/* ── Order Summary ── */}
-        <div className="card p-5 h-fit lg:sticky lg:top-24">
-          <h2 className="font-bold text-lg text-gray-900 mb-4 pb-3 border-b border-gray-100">
-            Order Summary
-          </h2>
+        <RevealOnScroll delay={120}>
+          <aside className="card p-6 lg:sticky lg:top-24">
+            <h2 className="text-xl font-semibold text-slate-950">Order summary</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Review your selected products before checkout.
+            </p>
 
-          {/* Item breakdown */}
-          <div className="space-y-2 mb-4 max-h-48 overflow-y-auto pr-1">
-            {cart.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-gray-500 line-clamp-1 flex-1 mr-3">
-                  {item.name}
-                  <span className="text-gray-400"> ×{item.qty}</span>
-                </span>
-                <span className="font-medium text-gray-700 flex-shrink-0">
-                  ₹{(item.price * item.qty).toLocaleString("en-IN")}
+            <div className="mt-6 space-y-3 border-y border-slate-100 py-5">
+              {cart.map((item) => (
+                <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+                  <span className="flex-1 text-slate-600">
+                    {item.name} <span className="text-slate-400">x{item.qty}</span>
+                  </span>
+                  <span className="font-medium text-slate-900">
+                    ₹{(item.price * item.qty).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3 pt-5 text-sm">
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Subtotal</span>
+                <span className="font-medium text-slate-900">
+                  ₹{subtotal.toLocaleString("en-IN")}
                 </span>
               </div>
-            ))}
-          </div>
-
-          {/* Totals */}
-          <div className="border-t border-gray-100 pt-3 space-y-2 mb-5">
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>Subtotal ({itemCount} items)</span>
-              <span className="font-medium text-gray-700">
-                ₹{subtotal.toLocaleString("en-IN")}
-              </span>
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Delivery</span>
+                <span>Added at checkout</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-base font-semibold text-slate-950">
+                <span>Total</span>
+                <span className="text-brand-800">
+                  ₹{subtotal.toLocaleString("en-IN")}+
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>Delivery charges</span>
-              <span className="text-gray-400 italic">At checkout</span>
-            </div>
-            <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-100">
-              <span>Total</span>
-              <span className="text-brand-700">
-                ₹{subtotal.toLocaleString("en-IN")}+
-              </span>
-            </div>
-          </div>
 
-          {/* COD badge */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-700 text-center font-medium">
-            💵 Cash on Delivery — Pay when your order arrives
-          </div>
+            <div className="mt-6 rounded-lg border border-lime-200 bg-lime-50 p-4 text-sm text-lime-800">
+              Cash on delivery is available for this order.
+            </div>
 
-          {/* Checkout button */}
-          <Link to="/checkout" className="btn-primary w-full py-3.5 text-base">
-            Proceed to Checkout
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
+            <Link to="/checkout" className="btn-primary mt-6 w-full">
+              Proceed to checkout
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </aside>
+        </RevealOnScroll>
       </div>
     </div>
   );

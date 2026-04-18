@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { placeOrder } from "../utils/api";
 import {
@@ -14,20 +14,16 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import RevealOnScroll from "../components/RevealOnScroll.jsx";
 
-// Individual form field component
 function Field({ label, error, children, required }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+      <label className="mb-2 block text-sm font-medium text-slate-700">
         {label} {required && <span className="text-red-400">*</span>}
       </label>
       {children}
-      {error && (
-        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-          <span>⚠</span> {error}
-        </p>
-      )}
+      {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
@@ -35,7 +31,6 @@ function Field({ label, error, children, required }) {
 export default function Checkout() {
   const { cart, subtotal, clearCart, itemCount } = useCart();
   const navigate = useNavigate();
-
   const [loading, setLoading] = useState(false);
   const [delivery, setDelivery] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", address: "" });
@@ -45,88 +40,92 @@ export default function Checkout() {
   const total = subtotal + deliveryNum;
 
   function set(field) {
-    return (e) => {
-      setForm((f) => ({ ...f, [field]: e.target.value }));
-      // Clear error on change
-      if (errors[field]) setErrors((err) => ({ ...err, [field]: "" }));
+    return (event) => {
+      setForm((current) => ({ ...current, [field]: event.target.value }));
+      if (errors[field]) {
+        setErrors((current) => ({ ...current, [field]: "" }));
+      }
     };
   }
 
   function validate() {
-    const e = {};
+    const nextErrors = {};
     const nameTrim = form.name.trim();
     const phoneTrim = form.phone.trim().replace(/\s|-/g, "");
-    const addrTrim = form.address.trim();
+    const addressTrim = form.address.trim();
 
     if (!nameTrim) {
-      e.name = "Full name is required";
+      nextErrors.name = "Full name is required";
     } else if (nameTrim.length < 2) {
-      e.name = "Name must be at least 2 characters";
+      nextErrors.name = "Name must be at least 2 characters";
     }
 
     if (!phoneTrim) {
-      e.phone = "Phone number is required";
+      nextErrors.phone = "Phone number is required";
     } else if (!/^\d{10}$/.test(phoneTrim)) {
-      e.phone = "Enter a valid 10-digit mobile number";
+      nextErrors.phone = "Enter a valid 10-digit mobile number";
     }
 
-    if (!addrTrim) {
-      e.address = "Delivery address is required";
-    } else if (addrTrim.length < 15) {
-      e.address = "Please enter a complete address (min 15 characters)";
+    if (!addressTrim) {
+      nextErrors.address = "Delivery address is required";
+    } else if (addressTrim.length < 15) {
+      nextErrors.address = "Please enter a complete address";
     }
 
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
+
     if (!validate()) {
-      toast.error("Please fix the errors before submitting");
+      toast.error("Please fix the form before placing the order");
       return;
     }
+
     if (cart.length === 0) {
-      toast.error("Your cart is empty!");
+      toast.error("Your cart is empty");
       navigate("/");
       return;
     }
 
     setLoading(true);
+
     try {
-      const res = await placeOrder({
+      const response = await placeOrder({
         customer: {
           name: form.name.trim(),
           phone: form.phone.trim().replace(/\s|-/g, ""),
           address: form.address.trim(),
         },
-        items: cart.map((i) => ({
-          id: i.id,
-          name: i.name,
-          price: i.price,
-          qty: i.qty,
+        items: cart.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          qty: item.qty,
         })),
         subtotal,
         delivery: deliveryNum,
         total,
       });
 
-      if (res.success) {
+      if (response.success) {
         clearCart();
         navigate("/order-success", {
           state: {
-            orderId: res.orderId,
+            orderId: response.orderId,
             name: form.name.trim(),
             total,
           },
           replace: true,
         });
       } else {
-        toast.error(res.error || "Failed to place order. Please try again.");
+        toast.error(response.error || "Failed to place order");
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Network error. Please check your connection and try again.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -135,71 +134,82 @@ export default function Checkout() {
   if (cart.length === 0) {
     return (
       <div className="container-custom py-20 text-center">
-        <ShoppingBag className="w-14 h-14 mx-auto text-gray-200 mb-4" />
-        <p className="text-gray-500 text-lg mb-4">Nothing in your cart</p>
-        <Link to="/" className="btn-primary">
-          Browse Products
+        <ShoppingBag className="mx-auto h-14 w-14 text-slate-300" />
+        <h1 className="mt-4 text-3xl font-semibold text-slate-950">
+          Nothing to check out yet.
+        </h1>
+        <p className="mt-3 text-sm text-slate-600">
+          Add products to your cart and return here when you are ready.
+        </p>
+        <Link to="/" className="btn-primary mt-8">
+          Browse products
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="container-custom py-6 sm:py-8">
-      {/* Back link */}
+    <div className="container-custom py-8 sm:py-10">
       <Link
         to="/cart"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-700 mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-brand-800"
       >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Cart
+        <ArrowLeft className="h-4 w-4" />
+        Back to cart
       </Link>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
-
-      {/* Progress indicator */}
-      <div className="flex items-center gap-2 mb-8 text-sm">
-        <span className="flex items-center gap-1.5 text-brand-700 font-semibold">
-          <span className="w-6 h-6 bg-brand-700 text-white rounded-full text-xs flex items-center justify-center font-bold">1</span>
-          Cart
-        </span>
-        <div className="flex-1 h-0.5 bg-brand-200 max-w-8" />
-        <span className="flex items-center gap-1.5 text-brand-700 font-semibold">
-          <span className="w-6 h-6 bg-brand-700 text-white rounded-full text-xs flex items-center justify-center font-bold">2</span>
+      <RevealOnScroll className="mt-6 max-w-2xl">
+        <p className="text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
           Checkout
-        </span>
-        <div className="flex-1 h-0.5 bg-gray-200 max-w-8" />
-        <span className="flex items-center gap-1.5 text-gray-400">
-          <span className="w-6 h-6 bg-gray-200 text-gray-500 rounded-full text-xs flex items-center justify-center font-bold">3</span>
-          Confirm
-        </span>
-      </div>
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold text-slate-950 sm:text-4xl">
+          Confirm details and place the order.
+        </h1>
+        <div className="mt-6 grid grid-cols-3 gap-3 text-sm">
+          {[
+            { step: "1", label: "Cart", active: true },
+            { step: "2", label: "Details", active: true },
+            { step: "3", label: "Confirm", active: false },
+          ].map((item) => (
+            <div
+              key={item.step}
+              className={`rounded-lg border px-4 py-3 ${
+                item.active
+                  ? "border-brand-200 bg-brand-50 text-brand-800"
+                  : "border-slate-200 bg-white/70 text-slate-400"
+              }`}
+            >
+              <p className="text-xs uppercase tracking-[0.12em]">Step {item.step}</p>
+              <p className="mt-1 font-semibold">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </RevealOnScroll>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* ── Left: Form ── */}
-        <form
-          onSubmit={handleSubmit}
-          className="lg:col-span-2 space-y-5"
-          noValidate
-        >
-          {/* Customer details */}
-          <div className="card p-5 sm:p-6">
-            <h2 className="font-bold text-base text-gray-900 mb-5 flex items-center gap-2">
-              <div className="w-7 h-7 bg-brand-100 rounded-lg flex items-center justify-center">
-                <User className="w-4 h-4 text-brand-700" />
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+        <form onSubmit={handleSubmit} noValidate className="space-y-5">
+          <RevealOnScroll className="card p-6 sm:p-7">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100 text-brand-800">
+                <User className="h-4 w-4" />
               </div>
-              Your Details
-            </h2>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-950">Customer details</h2>
+                <p className="text-sm text-slate-500">
+                  Use the same phone number you want the confirmation call on.
+                </p>
+              </div>
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <Field label="Full Name" error={errors.name} required>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={form.name}
                     onChange={set("name")}
-                    className={`input-field pl-10 ${errors.name ? "border-red-400 focus:ring-red-300" : ""}`}
+                    className={`input-field pl-10 ${errors.name ? "border-red-300 focus:ring-red-100" : ""}`}
                     placeholder="Enter your full name"
                     autoComplete="name"
                   />
@@ -208,12 +218,12 @@ export default function Checkout() {
 
               <Field label="Mobile Number" error={errors.phone} required>
                 <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type="tel"
                     value={form.phone}
                     onChange={set("phone")}
-                    className={`input-field pl-10 ${errors.phone ? "border-red-400 focus:ring-red-300" : ""}`}
+                    className={`input-field pl-10 ${errors.phone ? "border-red-300 focus:ring-red-100" : ""}`}
                     placeholder="10-digit mobile number"
                     inputMode="numeric"
                     maxLength={10}
@@ -224,156 +234,128 @@ export default function Checkout() {
 
               <Field label="Delivery Address" error={errors.address} required>
                 <div className="relative">
-                  <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-400" />
+                  <MapPin className="pointer-events-none absolute left-3.5 top-4 h-4 w-4 text-slate-400" />
                   <textarea
                     value={form.address}
                     onChange={set("address")}
-                    className={`input-field pl-10 h-28 resize-none ${errors.address ? "border-red-400 focus:ring-red-300" : ""}`}
-                    placeholder="House No., Street, Area, City, State, PIN Code"
+                    className={`input-field h-32 resize-none pl-10 ${errors.address ? "border-red-300 focus:ring-red-100" : ""}`}
+                    placeholder="House number, street, area, city, state, PIN code"
                     autoComplete="street-address"
                   />
                 </div>
               </Field>
             </div>
-          </div>
+          </RevealOnScroll>
 
-          {/* Delivery charge */}
-          <div className="card p-5 sm:p-6">
-            <h2 className="font-bold text-base text-gray-900 mb-5 flex items-center gap-2">
-              <div className="w-7 h-7 bg-brand-100 rounded-lg flex items-center justify-center">
-                <Truck className="w-4 h-4 text-brand-700" />
+          <RevealOnScroll delay={80} className="card p-6 sm:p-7">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100 text-brand-800">
+                <Truck className="h-4 w-4" />
               </div>
-              Delivery Charges
-            </h2>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-950">Delivery charge</h2>
+                <p className="text-sm text-slate-500">
+                  Add the agreed delivery amount or leave it at zero.
+                </p>
+              </div>
+            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Delivery Charge (₹)
-              </label>
+            <Field label="Delivery Charge (₹)">
               <div className="relative">
-                <IndianRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <IndianRupee className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="number"
                   min="0"
                   value={delivery}
-                  onChange={(e) => setDelivery(e.target.value)}
+                  onChange={(event) => setDelivery(event.target.value)}
                   className="input-field pl-10"
                   placeholder="0"
                   inputMode="numeric"
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-1.5">
-                Enter the delivery charge as communicated by the seller. Leave
-                empty or 0 for free delivery.
-              </p>
-            </div>
-          </div>
+            </Field>
+          </RevealOnScroll>
 
-          {/* Payment method */}
-          <div className="card p-5 sm:p-6 bg-amber-50 border-amber-200">
+          <RevealOnScroll delay={140} className="rounded-lg border border-amber-200 bg-amber-50 p-5">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-lg">💵</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                <CheckCircle className="h-5 w-5" />
               </div>
               <div>
-                <p className="font-bold text-amber-800">
-                  Cash on Delivery (COD)
-                </p>
-                <p className="text-sm text-amber-700 mt-0.5">
-                  This store accepts cash payment only at the time of delivery.
-                  No online payment is required.
+                <p className="font-semibold text-amber-900">Cash on delivery</p>
+                <p className="mt-1 text-sm leading-6 text-amber-800">
+                  This order uses COD only. No online payment is required during
+                  checkout.
                 </p>
               </div>
-              <CheckCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
             </div>
-          </div>
+          </RevealOnScroll>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full py-4 text-base shadow-lg shadow-brand-700/20"
-          >
+          <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Placing your order…
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Placing your order...
               </>
             ) : (
-              <>
-                Place Order — ₹{total.toLocaleString("en-IN")}
-              </>
+              <>Place order - ₹{total.toLocaleString("en-IN")}</>
             )}
           </button>
-
-          <p className="text-xs text-center text-gray-400">
-            By placing this order you agree to receive a confirmation call on
-            your mobile number.
-          </p>
         </form>
 
-        {/* ── Right: Summary ── */}
-        <div className="card p-5 h-fit lg:sticky lg:top-24">
-          <h2 className="font-bold text-base text-gray-900 mb-4 pb-3 border-b border-gray-100">
-            Order Summary
-            <span className="text-sm font-normal text-gray-400 ml-1">
-              ({itemCount} item{itemCount !== 1 && "s"})
-            </span>
-          </h2>
+        <RevealOnScroll delay={120}>
+          <aside className="card p-6 lg:sticky lg:top-24">
+            <h2 className="text-xl font-semibold text-slate-950">Order summary</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {itemCount} item{itemCount !== 1 && "s"} in this order.
+            </p>
 
-          {/* Items list */}
-          <div className="space-y-2.5 mb-4 max-h-52 overflow-y-auto pr-1">
-            {cart.map((item) => (
-              <div key={item.id} className="flex gap-2">
-                <div className="w-10 h-10 bg-gray-50 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-contain p-0.5"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://placehold.co/40x40/f3f4f6/94a3b8?text=·";
-                    }}
-                  />
+            <div className="mt-6 space-y-3 border-y border-slate-100 py-5">
+              {cart.map((item) => (
+                <div key={item.id} className="flex gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-white/60 bg-[linear-gradient(180deg,#f5fbf3_0%,#edf6ec_100%)] p-1.5">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="h-full w-full object-contain"
+                      onError={(event) => {
+                        event.target.src =
+                          "https://placehold.co/48x48/f3f4f6/94a3b8?text=Img";
+                      }}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-900">
+                      {item.name}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      x{item.qty} · ₹{(item.price * item.qty).toLocaleString("en-IN")}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-700 line-clamp-1">
-                    {item.name}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    ×{item.qty} · ₹{(item.price * item.qty).toLocaleString("en-IN")}
-                  </p>
-                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3 pt-5 text-sm">
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Subtotal</span>
+                <span className="font-medium text-slate-900">
+                  ₹{subtotal.toLocaleString("en-IN")}
+                </span>
               </div>
-            ))}
-          </div>
-
-          {/* Price rows */}
-          <div className="border-t border-gray-100 pt-3 space-y-2">
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>Subtotal</span>
-              <span className="font-medium text-gray-700">
-                ₹{subtotal.toLocaleString("en-IN")}
-              </span>
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Delivery</span>
+                <span className={deliveryNum === 0 ? "font-medium text-brand-700" : "font-medium text-slate-900"}>
+                  {deliveryNum === 0 ? "Free" : `₹${deliveryNum.toLocaleString("en-IN")}`}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-base font-semibold text-slate-950">
+                <span>Total payable</span>
+                <span className="text-brand-800">₹{total.toLocaleString("en-IN")}</span>
+              </div>
             </div>
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>Delivery</span>
-              <span className={`font-medium ${deliveryNum === 0 ? "text-green-600" : "text-gray-700"}`}>
-                {deliveryNum === 0 ? "FREE" : `₹${deliveryNum.toLocaleString("en-IN")}`}
-              </span>
-            </div>
-            <div className="flex justify-between font-bold text-base border-t border-gray-100 pt-2.5 mt-2">
-              <span>Total Payable</span>
-              <span className="text-brand-700 text-lg">
-                ₹{total.toLocaleString("en-IN")}
-              </span>
-            </div>
-          </div>
-
-          <p className="text-xs text-center text-gray-400 mt-4">
-            🔒 Safe &amp; secure ordering
-          </p>
-        </div>
+          </aside>
+        </RevealOnScroll>
       </div>
     </div>
   );
