@@ -1,24 +1,20 @@
 import { Link } from "react-router-dom";
 import { ShoppingCart, Eye, CheckCircle } from "lucide-react";
-import { useCart } from "../context/CartContext.jsx";
 import toast from "react-hot-toast";
-
-function getStockNum(stock) {
-  if (stock === undefined || stock === null) return 50;
-  const num = Number(stock);
-  return Number.isNaN(num) ? 50 : num;
-}
+import { useCart } from "../context/CartContext.jsx";
+import { normalizeProduct } from "../utils/productState";
 
 export default function ProductCard({ product }) {
   const { addItem, isInCart } = useCart();
-  const stock = getStockNum(product.stock);
-  const isOutOfStock =
-    stock <= 0 || String(product.status).toLowerCase() === "out of stock";
-  const inCart = isInCart(product.id);
+  const normalizedProduct = normalizeProduct(product);
+  const { stock, isOutOfStock } = normalizedProduct;
+  const inCart = isInCart(normalizedProduct.id);
 
   const discount =
-    product.mrp && product.price
-      ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+    normalizedProduct.mrp && normalizedProduct.price
+      ? Math.round(
+          ((normalizedProduct.mrp - normalizedProduct.price) / normalizedProduct.mrp) * 100
+        )
       : 0;
 
   function handleAddToCart(event) {
@@ -27,20 +23,20 @@ export default function ProductCard({ product }) {
 
     if (isOutOfStock) return;
 
-    addItem({ ...product, stock });
-    toast.success(`${product.name} added to cart!`);
+    addItem(normalizedProduct);
+    toast.success(`${normalizedProduct.name} added to cart!`);
   }
 
   return (
     <Link
-      to={`/product/${product.id}`}
+      to={`/product/${normalizedProduct.id}`}
       className="group flex h-full flex-col overflow-hidden rounded-lg border border-white/70 bg-white/85 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-28px_rgba(21,128,61,0.45)]"
     >
       <div className="relative aspect-square overflow-hidden bg-[linear-gradient(180deg,#f5fbf3_0%,#edf6ec_100%)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(187,247,208,0.55),transparent_44%)]" />
         <img
-          src={product.image}
-          alt={product.name}
+          src={normalizedProduct.image}
+          alt={normalizedProduct.name}
           className="relative z-10 h-full w-full object-contain p-4 transition duration-500 group-hover:scale-105"
           loading="lazy"
           onError={(event) => {
@@ -67,24 +63,24 @@ export default function ProductCard({ product }) {
       <div className="flex flex-1 flex-col p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-700">
-            {product.category}
+            {normalizedProduct.category}
           </span>
           <span className="text-[11px] text-slate-400">
-            {product.brand || "Green Home"}
+            {normalizedProduct.brand || "Green Home"}
           </span>
         </div>
 
         <h3 className="min-h-[44px] text-sm font-semibold leading-6 text-slate-900 transition group-hover:text-brand-800">
-          {product.name}
+          {normalizedProduct.name}
         </h3>
 
         <div className="mt-4 flex items-end gap-2">
           <span className="text-xl font-semibold text-slate-950">
-            ₹{Number(product.price || 0).toLocaleString("en-IN")}
+            ₹{Number(normalizedProduct.price || 0).toLocaleString("en-IN")}
           </span>
-          {product.mrp && product.mrp > product.price && (
+          {normalizedProduct.mrp && normalizedProduct.mrp > normalizedProduct.price && (
             <span className="pb-0.5 text-xs text-slate-400 line-through">
-              ₹{Number(product.mrp).toLocaleString("en-IN")}
+              ₹{Number(normalizedProduct.mrp).toLocaleString("en-IN")}
             </span>
           )}
         </div>

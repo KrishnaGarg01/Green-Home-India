@@ -100,6 +100,49 @@ function doOptions(e) {
   );
 }
 
+function normalizeProductStatus(stock, status) {
+  const stockNumber = Number(stock);
+  const safeStock = Number.isNaN(stockNumber) ? 0 : stockNumber;
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+
+  if (safeStock <= 0) {
+    return { stock: 0, status: "Inactive" };
+  }
+
+  if (!normalizedStatus || normalizedStatus === "inactive" || normalizedStatus === "out of stock") {
+    return { stock: safeStock, status: "Active" };
+  }
+
+  return { stock: safeStock, status: status };
+}
+
+function buildProductFromRow(headers, row) {
+  const product = {};
+
+  headers.forEach((header, idx) => {
+    product[header.toLowerCase().replace(/ /g, "_")] = row[idx];
+  });
+
+  const normalized = normalizeProductStatus(product.stock, product.status);
+  product.stock = normalized.stock;
+  product.status = normalized.status;
+
+  return product;
+}
+
+function syncProductStatusIfNeeded(sheet, rowIndex, headers, product) {
+  const stockCol = headers.indexOf("Stock");
+  const statusCol = headers.indexOf("Status");
+
+  if (stockCol !== -1 && Number(product.stock) !== Number(sheet.getRange(rowIndex, stockCol + 1).getValue())) {
+    sheet.getRange(rowIndex, stockCol + 1).setValue(product.stock);
+  }
+
+  if (statusCol !== -1 && String(product.status) !== String(sheet.getRange(rowIndex, statusCol + 1).getValue())) {
+    sheet.getRange(rowIndex, statusCol + 1).setValue(product.status);
+  }
+}
+
 // ---- GET ALL PRODUCTS ----
 function getProducts() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet()
@@ -114,11 +157,9 @@ function getProducts() {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (!row[0]) continue; // skip empty rows
-    
-    const product = {};
-    headers.forEach((header, idx) => {
-      product[header.toLowerCase().replace(/ /g, "_")] = row[idx];
-    });
+
+    const product = buildProductFromRow(headers, row);
+    syncProductStatusIfNeeded(sheet, i + 1, headers, product);
     products.push(product);
   }
   
@@ -135,10 +176,8 @@ function getProductById(id) {
   
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(id)) {
-      const product = {};
-      headers.forEach((header, idx) => {
-        product[header.toLowerCase().replace(/ /g, "_")] = data[i][idx];
-      });
+      const product = buildProductFromRow(headers, data[i]);
+      syncProductStatusIfNeeded(sheet, i + 1, headers, product);
       return { success: true, product };
     }
   }
@@ -170,6 +209,7 @@ function placeOrder(body) {
   const headers = productData[0];
   const idCol = headers.indexOf("ID");
   const stockCol = headers.indexOf("Stock");
+  const statusCol = headers.indexOf("Status");
   
   const stockErrors = [];
   
@@ -202,11 +242,10 @@ function placeOrder(body) {
         const newStock = currentStock - item.qty;
         // Row index is r+1 (1-based), col is stockCol+1 (1-based)
         productsSheet.getRange(r + 1, stockCol + 1).setValue(newStock);
-        
-        // Mark out of stock if needed
-        const statusCol = headers.indexOf("Status");
-        if (statusCol !== -1 && newStock <= 0) {
-          productsSheet.getRange(r + 1, statusCol + 1).setValue("Out of Stock");
+
+        if (statusCol !== -1) {
+          const normalized = normalizeProductStatus(newStock, productData[r][statusCol]);
+          productsSheet.getRange(r + 1, statusCol + 1).setValue(normalized.status);
         }
         break;
       }

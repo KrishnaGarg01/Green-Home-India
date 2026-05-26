@@ -7,6 +7,10 @@ const CART_STORAGE_KEY = "ghi_cart";
 function cartReducer(state, action) {
   switch (action.type) {
     case "ADD_ITEM": {
+      if (!action.product || Number(action.product.stock) <= 0) {
+        return state;
+      }
+
       const existing = state.find((i) => i.id === action.product.id);
       if (existing) {
         return state.map((i) =>
@@ -24,7 +28,15 @@ function cartReducer(state, action) {
     case "UPDATE_QTY": {
       const { id, qty } = action;
       if (qty <= 0) return state.filter((i) => i.id !== id);
-      return state.map((i) => (i.id === id ? { ...i, qty } : i));
+
+      return state.flatMap((i) => {
+        if (i.id !== id) return [i];
+
+        const maxQty = Number(i.stock) || 0;
+        if (maxQty <= 0) return [];
+
+        return [{ ...i, qty: Math.min(qty, maxQty) }];
+      });
     }
 
     case "CLEAR_CART":

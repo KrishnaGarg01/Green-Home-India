@@ -88,7 +88,8 @@ function CartItem({ item }) {
 
                   toast.error("Max stock reached");
                 }}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-brand-800 shadow-sm hover:bg-brand-50"
+                disabled={item.qty >= item.stock}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-brand-800 shadow-sm hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Increase quantity"
               >
                 <Plus className="h-4 w-4" />

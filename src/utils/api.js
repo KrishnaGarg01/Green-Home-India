@@ -2,6 +2,8 @@
 // API utility - connects React frontend to Google Apps Script
 // ============================================================
 
+import { normalizeProduct } from "./productState";
+
 const API_URL = import.meta.env.VITE_API_URL || "";
 
 // Fallback: use local products JSON when no API URL is configured
@@ -34,10 +36,16 @@ async function post(body = {}) {
 export async function fetchProducts() {
   if (USE_LOCAL_DATA) {
     const mod = await import("../data/products.json");
-    return { success: true, products: mod.default };
+    return { success: true, products: mod.default.map(normalizeProduct) };
   }
 
-  return get({ action: "products" });
+  const response = await get({ action: "products" });
+  if (!response.success || !Array.isArray(response.products)) return response;
+
+  return {
+    ...response,
+    products: response.products.map(normalizeProduct),
+  };
 }
 
 export async function fetchProduct(id) {
@@ -45,11 +53,17 @@ export async function fetchProduct(id) {
     const mod = await import("../data/products.json");
     const product = mod.default.find((p) => p.id === id);
     return product
-      ? { success: true, product }
+      ? { success: true, product: normalizeProduct(product) }
       : { success: false, error: "Not found" };
   }
 
-  return get({ action: "product", id });
+  const response = await get({ action: "product", id });
+  if (!response.success || !response.product) return response;
+
+  return {
+    ...response,
+    product: normalizeProduct(response.product),
+  };
 }
 
 export async function placeOrder(orderData) {

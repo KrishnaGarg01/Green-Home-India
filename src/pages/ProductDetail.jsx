@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { fetchProduct } from "../utils/api";
 import { useCart } from "../context/CartContext";
 import RevealOnScroll from "../components/RevealOnScroll.jsx";
+import { normalizeProduct } from "../utils/productState";
 
 function Skeleton() {
   return (
@@ -91,22 +92,25 @@ export default function ProductDetail() {
     );
   }
 
-  const stock = Number(product.stock) || 50;
-  const isOutOfStock =
-    stock <= 0 || String(product.status).toLowerCase() === "out of stock";
+  const normalizedProduct = normalizeProduct(product);
+  const { stock, isOutOfStock } = normalizedProduct;
   const inCart = isInCart(id);
   const discount =
-    product.mrp && Number(product.mrp) > Number(product.price)
+    normalizedProduct.mrp && Number(normalizedProduct.mrp) > Number(normalizedProduct.price)
       ? Math.round(
-          ((Number(product.mrp) - Number(product.price)) / Number(product.mrp)) * 100
+          ((Number(normalizedProduct.mrp) - Number(normalizedProduct.price)) /
+            Number(normalizedProduct.mrp)) *
+            100
         )
       : 0;
   const savings =
-    discount > 0 ? Number(product.mrp) - Number(product.price) : 0;
+    discount > 0 ? Number(normalizedProduct.mrp) - Number(normalizedProduct.price) : 0;
 
   function handleAdd() {
-    addItem({ ...product, stock });
-    toast.success(`${product.name} added to cart!`);
+    if (isOutOfStock) return;
+
+    addItem(normalizedProduct);
+    toast.success(`${normalizedProduct.name} added to cart!`);
   }
 
   function handleIncrease() {
@@ -160,8 +164,8 @@ export default function ProductDetail() {
           <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-white/60 bg-white/70 p-6">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(187,247,208,0.72),transparent_48%)]" />
             <img
-              src={product.image}
-              alt={product.name}
+              src={normalizedProduct.image}
+              alt={normalizedProduct.name}
               className="relative z-10 h-full w-full object-contain"
               onError={(event) => {
                 event.target.src =
@@ -184,23 +188,25 @@ export default function ProductDetail() {
         <RevealOnScroll delay={120}>
           <div className="card p-6 sm:p-7">
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
-              <span>{product.category}</span>
-              {product.brand && <span className="text-slate-400">{product.brand}</span>}
+              <span>{normalizedProduct.category}</span>
+              {normalizedProduct.brand && (
+                <span className="text-slate-400">{normalizedProduct.brand}</span>
+              )}
             </div>
 
             <h1 className="mt-4 text-balance text-3xl font-semibold leading-tight text-slate-950 sm:text-4xl">
-              {product.name}
+              {normalizedProduct.name}
             </h1>
 
             <div className="mt-6 rounded-lg border border-brand-100 bg-brand-50 p-5">
               <div className="flex flex-wrap items-end gap-3">
                 <span className="text-4xl font-semibold text-slate-950">
-                  ₹{Number(product.price || 0).toLocaleString("en-IN")}
+                  ₹{Number(normalizedProduct.price || 0).toLocaleString("en-IN")}
                 </span>
                 {discount > 0 && (
                   <>
                     <span className="pb-1 text-lg text-slate-400 line-through">
-                      ₹{Number(product.mrp).toLocaleString("en-IN")}
+                      ₹{Number(normalizedProduct.mrp).toLocaleString("en-IN")}
                     </span>
                     <span className="rounded-full bg-lime-300 px-2.5 py-1 text-xs font-semibold text-slate-950">
                       {discount}% off
@@ -229,9 +235,9 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {product.description && (
+            {normalizedProduct.description && (
               <p className="mt-6 border-l-2 border-brand-200 pl-4 text-sm leading-7 text-slate-600">
-                {product.description}
+                {normalizedProduct.description}
               </p>
             )}
 
